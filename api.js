@@ -23,6 +23,27 @@ function showStatus(message, type = "") {
     statusMessage.className = type;
 }
 
+function createNoteElement(note) {
+    const listItem = document.createElement("li");
+
+    const title = document.createElement("h2");
+    title.textContent = note.title;
+
+    const body = document.createElement("p");
+    body.textContent = note.body;
+
+    const deleteButton = document.createElement("button");
+    deleteButton.textContent = "Delete";
+    deleteButton.type = "button";
+    deleteButton.addEventListener("click", () => deleteNote(note.id, listItem));
+
+    listItem.appendChild(title);
+    listItem.appendChild(body);
+    listItem.appendChild(deleteButton);
+
+    return listItem;
+}
+
 function displayNotes(notes) {
     notesList.innerHTML = "";
 
@@ -34,33 +55,8 @@ function displayNotes(notes) {
     }
 
     notes.forEach(note => {
-        const listItem = document.createElement("li");
-
-        const title = document.createElement("h2");
-        title.textContent = note.title;
-
-        const body = document.createElement("p");
-        body.textContent = note.body;
-
-        listItem.appendChild(title);
-        listItem.appendChild(body);
-        notesList.appendChild(listItem);
+        notesList.appendChild(createNoteElement(note));
     });
-}
-
-function createNoteElement(note) {
-    const listItem = document.createElement("li");
-
-    const title = document.createElement("h2");
-    title.textContent = note.title;
-
-    const body = document.createElement("p");
-    body.textContent = note.body;
-
-    listItem.appendChild(title);
-    listItem.appendChild(body);
-
-    return listItem;
 }
 
 async function loadNotes() {
@@ -129,6 +125,36 @@ async function createNote(event) {
         );
     } finally {
         submitButton.disabled = false;
+    }
+}
+
+async function deleteNote(noteId, noteElement) {
+    const deleteButton = noteElement.querySelector("button");
+    deleteButton.disabled = true;
+
+    showStatus("Deleting note...", "");
+
+    try {
+        // JSONPlaceholder simulates DELETE but does not permanently store changes.
+        await request(`${API_URL}/${noteId}`, {
+            method: "DELETE"
+        });
+
+        noteElement.remove();
+
+        if (notesList.children.length === 0) {
+            const emptyMessage = document.createElement("li");
+            emptyMessage.textContent = "No notes found.";
+            notesList.appendChild(emptyMessage);
+        }
+
+        showStatus(`Note ${noteId} deleted successfully.`, "success");
+    } catch (error) {
+        deleteButton.disabled = false;
+        showStatus(
+            "Sorry, we could not delete the note. Please try again.",
+            "error"
+        );
     }
 }
 
